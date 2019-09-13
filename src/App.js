@@ -20,16 +20,18 @@ function App() {
 
   useEffect(() => {
     const filter = () => {
-    axios.get(`http://192.168.1.22:3002/checar_enviados?fechaInicio=${fecha_inicio.toISOString().split('T')[0]}&fechaFin=${fecha_fin.toISOString().split('T')[0]}`)
+    axios.get(`http://192.168.1.64:3002/checar_enviados?fechaInicio=${fecha_inicio.toISOString().split('T')[0]}&fechaFin=${fecha_fin.toISOString().split('T')[0]}`)
     .then(
       enviados => {
+        let yesterday = new Date()
+        yesterday.setDate(fecha_fin.getDate() - 1)
         set_fecha_inicio(null)
         set_fecha_fin(null)
         set_total_dispositivo(enviados.data.dispositivos)
         set_total_lada(enviados.data.lada)
         set_total_etiqueta(enviados.data.etiquetas)
         set_total_envios(enviados.data.total[0].total)
-        set_fechas(`Del ${fecha_inicio.toISOString().split('T')[0]} al ${fecha_fin.toISOString().split('T')[0]}`)
+        set_fechas(`Del ${fecha_inicio.toISOString().split('T')[0]}, 00:00 al ${yesterday.toISOString().split('T')[0]}, 23:59`)
       }
     ).catch(
       err => {
@@ -48,7 +50,9 @@ function App() {
   };
 
   const handleChangeFin = (date) => {
-    set_fecha_fin(date)
+    let tomorrow = new Date()
+    tomorrow.setDate(date.getDate() + 1)
+    set_fecha_fin(tomorrow)
   };
  
   const columns = [{
@@ -59,6 +63,14 @@ function App() {
     accessor: 'total',
   }]
 
+  const ExampleCustomInput = ({ value, onClick, set }) => (
+    <button style={{width: 200, height: 38}} className="example-custom-input" onClick={onClick}>
+      {` ${set} `}
+      {value}
+      <FontAwesomeIcon icon={faCalendarAlt} style={{marginLeft: "10px", marginRight: "10px"}} />
+    </button>
+  );
+
   return (
     <div>
       <div style={{textAlign: "center", fontSize: 18}}>Total envíos: <div style={{fontWeight: "bold"}}>{total_envios}</div></div>
@@ -68,15 +80,15 @@ function App() {
             <DatePicker
               selected={fecha_inicio}
               onChange={handleChangeInicio}
+              customInput={<ExampleCustomInput set="Inicio" />}
             />
-            <FontAwesomeIcon icon={faCalendarAlt} style={{marginLeft: "10px"}} />
           </div>
           <div style={{marginLeft: "10px"}}>
             <DatePicker
               selected={fecha_fin}
               onChange={handleChangeFin}
+              customInput={<ExampleCustomInput set="Fin" />}
             />
-            <FontAwesomeIcon icon={faCalendarAlt} style={{marginLeft: "10px"}} />
           </div>
       </div>
       <div style={{textAlign: "center", fontSize: 16, marginTop: 10}}>{fechas}</div>
@@ -90,6 +102,13 @@ function App() {
       <ReactTable
         data={[total_etiqueta, total_lada, total_dispositivo][selected]}
         columns={columns}
+        className="-striped -highlight"
+        defaultSorted={[
+            {
+              id: "total",
+              desc: true
+            }
+          ]}
       />
     </div>
   );
